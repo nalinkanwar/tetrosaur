@@ -21,8 +21,12 @@ class Gameboard
         void setRectOffset(twoD &toff);
 
         bool setRect(int gb_x, int gb_y, color & tc, bool movable);
+        bool setGhostRect(int gb_x, int gb_y);
         bool resetRect(int gb_x, int gb_y);
         bool checkRect(int gb_x, int gb_y);
+
+        bool checkLines();
+        void applyGravity(int line);
 
         bool Draw(SDL_Renderer *srend);        
         void Reset();

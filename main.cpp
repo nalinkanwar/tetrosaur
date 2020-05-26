@@ -1,10 +1,14 @@
 #include <iostream>
 #include "SDL.h"
+#include "SDL/SDL_timer.h"
+#include "SDL/SDL_ttf.h"
 #include "gameboard.h"
 #include "tetromino.h"
+#include "font.h"
 
-#define MAX_X ((SCALING_UNIT * 10) + SCALING_UNIT )
-#define MAX_Y ((SCALING_UNIT * 22) + SCALING_UNIT )
+#define MAX_X ((SCALING_UNIT * 10) /*+ SCALING_UNIT*/)
+#define MAX_Y ((SCALING_UNIT * 22) /*+ SCALING_UNIT*/)
+#define DROP_INTERVAL 500
 
 uint8_t tetrominos[TETROMINO_MAX][4][2] = {
     {{0,0},{0,0},{0,0},{0,0}}, //NONE
@@ -30,7 +34,7 @@ uint8_t tcolordata[TETROMINO_MAX][4] = {
 
 int initSDL(SDL_Window **window, SDL_Renderer **renderer)
 {
-    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER) != 0) {
         SDL_Log("Unable to initialize SDL: %s\n", SDL_GetError());
         return 1;
     }
@@ -45,10 +49,17 @@ int initSDL(SDL_Window **window, SDL_Renderer **renderer)
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create renderer: %s", SDL_GetError());
         return 3;
     }
+
+    if(TTF_Init() == -1) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to init TTF library: %s!", TTF_GetError());
+        return 4;
+    }
+
     SDL_LogSetAllPriority(SDL_LOG_PRIORITY_WARN);
     return 0;
 }
 
+TTF_Font *font = nullptr;
 
 int main(int argc, char *argv[])
 {
@@ -57,10 +68,11 @@ int main(int argc, char *argv[])
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
     SDL_Surface *surface = nullptr;
-    Tetromino *pt = nullptr;
+    Tetromino *pt = nullptr, *gt = nullptr;
     twoD td(0,0), tro(2,2);
     color c(255,255,255,255);
     Gameboard gb(td);
+    long base_timer, drop_timer, framerate;
 
 
     if((retval = initSDL(&window, &renderer)) != 0) {
@@ -69,10 +81,17 @@ int main(int argc, char *argv[])
 
     srand (time(NULL));
 
+    if((font = TTF_OpenFont("FreeSans.ttf", 12)) == nullptr) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to init TTF library: %s!", TTF_GetError());
+        return 5;
+    }
+
     /* spawn the first one */
     td.setXY(3, 1);
     pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+    //pt = new Tetromino(TETROMINO_T, td);
 
+    base_timer = drop_timer = SDL_GetTicks();
     /* Main game loop */
     while (!quit) {
 
@@ -92,27 +111,44 @@ int main(int argc, char *argv[])
                                 pt->move(gb, TETRO_RIGHT);
                                 break;
                             case SDLK_DOWN:
-                                pt->move(gb, TETRO_DOWN);
+                                if(pt->move(gb, TETRO_DOWN) == false) {
+                                    delete pt;
+                                    td.setXY(3, 1);
+                                    pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+                                }
+                                break;
+                            case SDLK_SPACE:
+                                while(pt->move(gb, TETRO_DOWN) != false);
+
+                                delete pt;
+                                td.setXY(3, 1);
+                                pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
                                 break;
                             case SDLK_LSHIFT:
-                                pt->move(gb, TETRO_ROL);
+                                pt->rotate(gb, TETRO_ROL);
                                 break;
                             case SDLK_UP:
                             case SDLK_RSHIFT:
-                                pt->move(gb, TETRO_ROR);
+                                pt->rotate(gb, TETRO_ROR);
                                 break;
                         }
                     }
                     break;
             }
         }
-        // Apply Gravity & Generate a new tetromino if old one gets 'putted'
-        if(pt->move(gb, TETRO_DOWN) == false) {
-            delete pt;
-            td.setXY(3, 1);
-            pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+
+        // Apply Gravity every 500 ms & Generate a new tetromino if old one gets put on gameboard
+        drop_timer = SDL_GetTicks();
+        if((drop_timer - base_timer) > DROP_INTERVAL) {
+            if(pt->move(gb, TETRO_DOWN) == false) {
+                delete pt;
+                td.setXY(3, 1);
+                pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+            }
+            base_timer = drop_timer;
         }
 
+        //gb.checkLines();
 
         /* Draw stuff and present it to the screen */
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -124,9 +160,10 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(renderer);
 
         SDL_Log("===================");
-        SDL_Delay(500);
+        SDL_Delay(10);
     }
 
     SDL_Quit();
+    TTF_Quit();
     return 0;
 }

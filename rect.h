@@ -24,6 +24,7 @@ class Rect: public Drawable
 
         void setColor(color& c);
         void setColor(uint8_t tr, uint8_t tg, uint8_t tb, uint8_t ta);
+        color& getColor();
 
         void move(int tx, int ty);
         void setMovable();

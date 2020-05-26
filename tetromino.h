@@ -35,16 +35,17 @@ class Tetromino
         std::vector<Rect> rlist;
         color c;
         tetro_types t;
+        Rect ghost;
     public:
         Tetromino();
         ~Tetromino();
 
         Tetromino(tetro_types tt);
         Tetromino(tetro_types tt, twoD& td);
-        Tetromino(std::vector<Rect> &rv, tetro_types tt);
+        Tetromino(const Tetromino &ct);
 
         bool put(Gameboard &gb);
-        bool rotate(Gameboard &gb, int direction);
+        bool rotate(Gameboard &gb, tetro_direction ttd);
         bool move(Gameboard &gb, tetro_direction ttd);
 
         void setType(tetro_types t);
@@ -53,7 +54,11 @@ class Tetromino
         void setPos(std::vector<Rect> &rv);
         bool checkPos(Gameboard &gb, int tx, int ty);
         void clearPos(Gameboard &gb);
+        void clearGhostPos(Gameboard &gb);
+
         void Draw(SDL_Renderer *rend, Gameboard &gb);
+
+        tetro_types getType() const;
 };
 
 #endif // TETROMINO_H

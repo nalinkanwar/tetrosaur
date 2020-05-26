@@ -48,7 +48,7 @@ bool Gameboard::checkRect(int gb_x, int gb_y)
     }
     Rect &tr = this->gb[gb_y][gb_x];
 
-    if(tr.isFilled() == true) {
+    if(tr.isFilled() == true && tr.isMovable() == false) {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "FILLED\n");
         return false;
     }
@@ -76,6 +76,16 @@ bool Gameboard::resetRect(int gb_x, int gb_y)
     tr.resetMovable();
 
     return true;
+}
+
+bool Gameboard::setGhostRect(int gb_x, int gb_y)
+{
+    Rect &tr = this->gb[gb_y][gb_x];
+    color col(100,100,100,255);
+
+    tr.setColor(col);
+    tr.setSize(SCALING_UNIT/2, SCALING_UNIT/2);
+    tr.setMovable();
 }
 
 bool Gameboard::setRect(int gb_x, int gb_y, color & tc, bool movable)
@@ -121,3 +131,46 @@ bool Gameboard::Draw(SDL_Renderer *srend)
     return true;
 }
 
+/* lines start to end are missing; shift blocks above them to the ground */
+void Gameboard::applyGravity(int line)
+{
+    int x,y;
+
+    for(y = line-1; y > 0; y--) {
+        for(x = 0; x < GB_MAX_X; x++) {
+            if(this->checkRect(x, y) == false) {
+                Rect &rtemp = this->gb[y][x];
+                color col(rtemp.R(), rtemp.G(), rtemp.B(), rtemp.A());
+                this->setRect(x, y+1, col, false);
+                this->resetRect(x,y);
+            }
+        }
+    }
+}
+
+bool Gameboard::checkLines()
+{
+    int x,y, check;
+    bool flag = false;
+
+    for(y = 0; y < GB_MAX_Y; y++) {
+        check = 0;
+        for(x = 0; x < GB_MAX_X; x++) {
+            if(this->checkRect(x, y) == false) {
+                check++;
+                SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "check %d != %d", check, GB_MAX_X);
+            }
+        }
+        if(check == GB_MAX_X) {
+            flag = true;
+            //blast this line;
+            SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "BLAST check %d != %d", check, GB_MAX_X);
+            for(x = 0; x < GB_MAX_X; x++) {
+                this->resetRect(x, y);
+            }
+            this->applyGravity(y);
+        }
+    }
+
+    return flag;
+}
