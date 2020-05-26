@@ -15,6 +15,15 @@ enum tetro_types {
     TETROMINO_L,
     TETROMINO_MAX,
 };
+
+enum tetro_direction {
+    TETRO_DOWN,
+    TETRO_LEFT,
+    TETRO_RIGHT,
+    TETRO_ROL,
+    TETRO_ROR
+};
+
 extern uint8_t tetrominos[TETROMINO_MAX][4][2];
 extern uint8_t tcolordata[TETROMINO_MAX][4];
 
@@ -34,13 +43,16 @@ class Tetromino
         Tetromino(tetro_types tt, twoD& td);
         Tetromino(std::vector<Rect> &rv, tetro_types tt);
 
+        bool put(Gameboard &gb);
         bool rotate(Gameboard &gb, int direction);
-        bool move(Gameboard &gb, int tx, int ty);
+        bool move(Gameboard &gb, tetro_direction ttd);
+
         void setType(tetro_types t);
         void setColor(color& tc);
         void spawn(twoD& td);
         void setPos(std::vector<Rect> &rv);
         bool checkPos(Gameboard &gb, int tx, int ty);
+        void clearPos(Gameboard &gb);
         void Draw(SDL_Renderer *rend, Gameboard &gb);
 };
 

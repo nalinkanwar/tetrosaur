@@ -3,8 +3,8 @@
 #include "gameboard.h"
 #include "tetromino.h"
 
-#define MAX_X ((SCALING_UNIT * 10) + (SCALING_UNIT / 10) )
-#define MAX_Y ((SCALING_UNIT * 22) + (SCALING_UNIT / 10) )
+#define MAX_X ((SCALING_UNIT * 10) + SCALING_UNIT )
+#define MAX_Y ((SCALING_UNIT * 22) + SCALING_UNIT )
 
 uint8_t tetrominos[TETROMINO_MAX][4][2] = {
     {{0,0},{0,0},{0,0},{0,0}}, //NONE
@@ -28,45 +28,52 @@ uint8_t tcolordata[TETROMINO_MAX][4] = {
     { 255,165,  0,  255}, //L
 };
 
-
-
-int main(int argc, char *argv[])
+int initSDL(SDL_Window **window, SDL_Renderer **renderer)
 {
-    bool quit = false;
-    SDL_Window *window = nullptr;
-    SDL_Renderer *renderer = nullptr;
-    SDL_Surface *surface = nullptr;
-    Tetromino *t[TETROMINO_MAX] = {nullptr};
-    twoD td(0,0), tro(2,2);
-    color c(255,255,255,255);
-    Gameboard gb(td);
-
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) != 0) {
         SDL_Log("Unable to initialize SDL: %s\n", SDL_GetError());
         return 1;
     }
 
-    if ((window = SDL_CreateWindow("Tetrosaur", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, MAX_X, MAX_Y, SDL_WINDOW_RESIZABLE)) == nullptr) {
+    if ((*window = SDL_CreateWindow("Tetrosaur", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, MAX_X, MAX_Y, SDL_WINDOW_RESIZABLE)) == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
         return 2;
     }
 
-    if((renderer = SDL_CreateRenderer(window,  -1, SDL_RENDERER_ACCELERATED)) == nullptr)
+    if((*renderer = SDL_CreateRenderer(*window,  -1, SDL_RENDERER_ACCELERATED)) == nullptr)
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create renderer: %s", SDL_GetError());
         return 3;
     }
+    SDL_LogSetAllPriority(SDL_LOG_PRIORITY_WARN);
+    return 0;
+}
+
+
+int main(int argc, char *argv[])
+{
+    bool quit = false;
+    int retval = 0;
+    SDL_Window *window = nullptr;
+    SDL_Renderer *renderer = nullptr;
+    SDL_Surface *surface = nullptr;
+    Tetromino *pt = nullptr;
+    twoD td(0,0), tro(2,2);
+    color c(255,255,255,255);
+    Gameboard gb(td);
+
+
+    if((retval = initSDL(&window, &renderer)) != 0) {
+        return retval;
+    }
 
     srand (time(NULL));
 
-//    for(int i = TETROMINO_NONE; i < TETROMINO_MAX; ++i) {
-//        td.setXY(4, 1);
-//        t[i] = new Tetromino(static_cast<tetro_types>(i), td);
-//    }
+    /* spawn the first one */
+    td.setXY(3, 1);
+    pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
 
-    td.setXY(1, 1);
-    t[TETROMINO_S] = new Tetromino(TETROMINO_S, td);
-
+    /* Main game loop */
     while (!quit) {
 
         SDL_Event event;
@@ -78,30 +85,41 @@ int main(int argc, char *argv[])
                             case SDLK_ESCAPE:
                                 quit = true;
                                 break;
-
+                            case SDLK_LEFT:
+                                pt->move(gb, TETRO_LEFT);
+                                break;
+                            case SDLK_RIGHT:
+                                pt->move(gb, TETRO_RIGHT);
+                                break;
+                            case SDLK_DOWN:
+                                pt->move(gb, TETRO_DOWN);
+                                break;
+                            case SDLK_LSHIFT:
+                                pt->move(gb, TETRO_ROL);
+                                break;
+                            case SDLK_UP:
+                            case SDLK_RSHIFT:
+                                pt->move(gb, TETRO_ROR);
+                                break;
                         }
                     }
                     break;
             }
         }
+        // Apply Gravity & Generate a new tetromino if old one gets 'putted'
+        if(pt->move(gb, TETRO_DOWN) == false) {
+            delete pt;
+            td.setXY(3, 1);
+            pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+        }
+
 
         /* Draw stuff and present it to the screen */
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        //DRAW STUFF HERE
-        color tc(255,0,255,255);
-        //gb.setRect(5,10, tc);
-
-//        for(int i = TETROMINO_NONE; i < TETROMINO_MAX; ++i) {
-//            td.setXY(1, i * 2);
-//            t = new Tetromino(static_cast<tetro_types>(i), td);
-//            t->Draw(renderer, gb);
-//        }
-        //t[TETROMINO_S]->move(gb, 0, 1);
-        t[TETROMINO_S]->Draw(renderer, gb);
-
-        gb.Draw(renderer);
+        pt->Draw(renderer, gb); //Draw the player controlled tetromino
+        gb.Draw(renderer);      //Draw the gameboard
 
         SDL_RenderPresent(renderer);
 

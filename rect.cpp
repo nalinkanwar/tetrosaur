@@ -78,6 +78,14 @@ bool Rect::isMovable() const
     return this->movestate;
 }
 
+bool Rect::isFilled() const
+{
+    if(this->w == SCALING_UNIT && this->h == SCALING_UNIT && this->movestate == false) {
+        return true;
+    }
+    return false;
+}
+
 bool Rect::Draw(SDL_Renderer *rend)
 {
     SDL_Rect rect, srect;

@@ -29,6 +29,7 @@ class Rect: public Drawable
         void setMovable();
         void resetMovable();
         bool isMovable() const;
+        bool isFilled() const;
 };
 
 #endif // RECT_H
