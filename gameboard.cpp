@@ -141,6 +141,18 @@ bool Gameboard::Draw(SDL_Renderer *srend)
             }
         }
     }
+
+
+    /* Draw Bounding Box */
+    SDL_Rect gb_r;
+    gb_r.x = this->offset.X();
+    gb_r.y = this->offset.Y();
+    gb_r.w = GB_MAX_X * SCALING_UNIT + (SCALING_UNIT/10);
+    gb_r.h = GB_MAX_Y * SCALING_UNIT + (SCALING_UNIT/10);
+
+    SDL_SetRenderDrawColor(srend, 255,255,255,255);
+    SDL_RenderDrawRect(srend, &gb_r);
+
     return true;
 }
 
@@ -171,13 +183,13 @@ bool Gameboard::checkLines()
         for(x = 0; x < GB_MAX_X; x++) {
             if(this->checkRect(x, y) == false) {
                 check++;
-                SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "check %d != %d", check, GB_MAX_X);
+                SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "check %d != %d", check, GB_MAX_X);
             }
         }
         if(check == GB_MAX_X) {
             flag = true;
             //blast this line;
-            SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "BLAST check %d != %d", check, GB_MAX_X);
+            SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "BLAST check %d != %d", check, GB_MAX_X);
             for(x = 0; x < GB_MAX_X; x++) {
                 this->resetRect(x, y);
             }

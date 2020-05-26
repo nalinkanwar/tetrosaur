@@ -42,7 +42,7 @@ class Tetromino
         ~Tetromino();
 
         Tetromino(tetro_types tt);
-        Tetromino(tetro_types tt, twoD& td);
+        Tetromino(tetro_types tt, Gameboard &gb, twoD& td);
         Tetromino(const Tetromino &ct);
 
         bool put(Gameboard &gb);
@@ -51,7 +51,7 @@ class Tetromino
 
         void setType(tetro_types t);
         void setColor(color& tc);
-        void spawn(twoD& td);
+        bool spawn(Gameboard &gb, twoD& td);
         void setPos(std::vector<Rect> &rv);
         bool checkPos(Gameboard &gb, int tx, int ty);
         void clearPos(Gameboard &gb);

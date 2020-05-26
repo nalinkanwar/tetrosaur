@@ -47,11 +47,11 @@ Tetromino::Tetromino(tetro_types tt)
 
 }
 
-Tetromino::Tetromino(tetro_types tt, twoD& td)
+Tetromino::Tetromino(tetro_types tt, Gameboard &gb, twoD& td)
 {
     this->rlist.clear();
     this->setType(tt);
-    this->spawn(td);
+    this->spawn(gb, td);
     SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "SPAWNT Tetromino %d at %d, %d\n", tt, td.X(), td.Y());
 }
 
@@ -69,7 +69,7 @@ void Tetromino::setType(tetro_types tt)
     SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "Setting tetromino color to %d,%d,%d,%d \n", this->c.R(), this->c.G(), this->c.B(), this->c.A());
 }
 
-void Tetromino::spawn(twoD& td) {
+bool Tetromino::spawn(Gameboard &gb, twoD& td) {
 
     int i = 0;
 
@@ -82,6 +82,10 @@ void Tetromino::spawn(twoD& td) {
         this->rlist.push_back(r);
         i++;
     }
+    if(this->checkPos(gb, 0, 0) == false) {
+        return false;
+    }
+    return true;
 }
 
 void Tetromino::Draw(SDL_Renderer *rend, Gameboard &gb)
@@ -93,16 +97,14 @@ void Tetromino::Draw(SDL_Renderer *rend, Gameboard &gb)
     while(rit != this->rlist.end()) {
 
         //SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "Spawn x,y = %d, %d\n", (*rit).X(), (*rit).Y());
-
         gb.setRect((*rit).X(), (*rit).Y(),this->c, true);
         rit++;
     }
 
     /* Draw ghost tetromino on gameboard */
-
     if(this->hasGhost == false) {
         while(this->checkPos(gb, 0, y) != false) y++;
-        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Calculated %d\n", y);
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "Calculated %d\n", y);
 
         if(y > 2 && y < GB_MAX_Y) {
             twoD ttd(0, y-1);
@@ -115,7 +117,6 @@ void Tetromino::Draw(SDL_Renderer *rend, Gameboard &gb)
             }
             this->hasGhost = true;
         }
-
     }
 }
 
@@ -205,8 +206,6 @@ bool Tetromino::rotate(Gameboard &gb, tetro_direction ttd)
         ctr++;
         rit++;
     }
-
-
     return true;
 }
 

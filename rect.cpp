@@ -114,7 +114,7 @@ bool Rect::Draw(SDL_Renderer *rend)
             /* now draw the actual rects */
             rect.x = this->X() + (SCALING_UNIT/10);
             rect.y = this->Y() + (SCALING_UNIT/10);
-            if(this->w == 0 && this->h == 0) {
+            if(this->w <= 0 && this->h <= 0) {
                 return false;
             }
             rect.w = this->w - (SCALING_UNIT/10);

@@ -6,8 +6,8 @@
 #include "tetromino.h"
 #include "font.h"
 
-#define MAX_X ((SCALING_UNIT * 10) /*+ SCALING_UNIT*/)
-#define MAX_Y ((SCALING_UNIT * 22) /*+ SCALING_UNIT*/)
+#define MAX_X ((SCALING_UNIT * 10) + (SCALING_UNIT * 5))
+#define MAX_Y ((SCALING_UNIT * 22) + (SCALING_UNIT))
 #define DROP_INTERVAL 500
 
 uint8_t tetrominos[TETROMINO_MAX][4][2] = {
@@ -32,7 +32,7 @@ uint8_t tcolordata[TETROMINO_MAX][4] = {
     { 255,165,  0,  255}, //L
 };
 
-int initSDL(SDL_Window **window, SDL_Renderer **renderer)
+int initSystems(SDL_Window **window, SDL_Renderer **renderer)
 {
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER) != 0) {
         SDL_Log("Unable to initialize SDL: %s\n", SDL_GetError());
@@ -59,80 +59,106 @@ int initSDL(SDL_Window **window, SDL_Renderer **renderer)
     return 0;
 }
 
-TTF_Font *font = nullptr;
+bool spawnNewTetromino(Gameboard &gb, Tetromino **pt, int x, int y) {
+    twoD td(x,y);
+
+    if(*pt != nullptr) {
+        delete *pt;
+    }
+    td.setXY(3, 1);
+    *pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1));
+    if(*pt == nullptr)
+        return false;
+
+    return((*pt)->spawn(gb, td));
+}
 
 int main(int argc, char *argv[])
 {
-    bool quit = false;
+    bool quit = false, gameover = false;
     int retval = 0;
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
     SDL_Surface *surface = nullptr;
     Tetromino *pt = nullptr, *gt = nullptr;
-    twoD td(0,0), tro(2,2);
     color c(255,255,255,255);
-    Gameboard gb(td);
+    Gameboard gb;
+    font fs_title;
+
     long base_timer, drop_timer, framerate;
 
-    if((retval = initSDL(&window, &renderer)) != 0) {
+    if((retval = initSystems(&window, &renderer)) != 0) {
         return retval;
     }
 
     srand (time(NULL));
 
-    if((font = TTF_OpenFont("FreeSans.ttf", 12)) == nullptr) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to init TTF library: %s!", TTF_GetError());
+    if((fs_title.load("FreeSans.ttf", 42)) == false) {
         return 5;
     }
 
+    fs_title.setText("Tetrosaur");
+    fs_title.setColor(0,150,0, 255);
+    fs_title.setXY(GB_MAX_X * SCALING_UNIT + 10,10);
+    fs_title.prepare(renderer);
+
     /* spawn the first one */
-    td.setXY(3, 1);
-    pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+    spawnNewTetromino(gb, &pt, 3, 1);
+//    td.setXY(3, 1);
+//    pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), gb, td);
     //pt = new Tetromino(TETROMINO_T, td);
 
     base_timer = drop_timer = SDL_GetTicks();
+
     /* Main game loop */
     while (!quit) {
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            switch(event.type) {
-                case SDL_KEYDOWN:
-                    {
-                        switch(event.key.keysym.sym) {
-                            case SDLK_ESCAPE:
-                                quit = true;
-                                break;
-                            case SDLK_LEFT:
-                                pt->move(gb, TETRO_LEFT);
-                                break;
-                            case SDLK_RIGHT:
-                                pt->move(gb, TETRO_RIGHT);
-                                break;
-                            case SDLK_DOWN:
-                                if(pt->move(gb, TETRO_DOWN) == false) {
-                                    delete pt;
-                                    td.setXY(3, 1);
-                                    pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
-                                }
-                                break;
-                            case SDLK_SPACE:
-                                while(pt->move(gb, TETRO_DOWN) != false);
-
-                                delete pt;
-                                td.setXY(3, 1);
-                                pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
-                                break;
-                            case SDLK_LSHIFT:
-                                pt->rotate(gb, TETRO_ROL);
-                                break;
-                            case SDLK_UP:
-                            case SDLK_RSHIFT:
-                                pt->rotate(gb, TETRO_ROR);
-                                break;
-                        }
+            switch(event.type) {                
+                case SDL_WINDOWEVENT:
+                {
+                    if(event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                        SDL_Log("Window %d closed", event.window.windowID);
+                        quit = true;
                     }
                     break;
+                }
+                case SDL_KEYDOWN:
+                {
+                    switch(event.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            quit = true;
+                            break;
+                        case SDLK_LEFT:
+                            pt->move(gb, TETRO_LEFT);
+                            break;
+                        case SDLK_RIGHT:
+                            pt->move(gb, TETRO_RIGHT);
+                            break;
+                        case SDLK_DOWN:
+                            if(pt->move(gb, TETRO_DOWN) == false) {
+                                if(spawnNewTetromino(gb, &pt, 3, 1) == false) {
+                                    gameover = true;
+                                }
+                            }
+                            break;
+                        case SDLK_SPACE:
+                            while(pt->move(gb, TETRO_DOWN) != false);
+                            if(spawnNewTetromino(gb, &pt, 3, 1) == false) {
+                                gameover = true;
+                            }
+                            break;
+                        case SDLK_LSHIFT:
+                            pt->rotate(gb, TETRO_ROL);
+                            break;
+                        case SDLK_UP:
+                        case SDLK_RSHIFT:
+                            pt->rotate(gb, TETRO_ROR);
+                            break;
+                    }
+                }
+                break;
             }
         }
 
@@ -140,26 +166,31 @@ int main(int argc, char *argv[])
         drop_timer = SDL_GetTicks();
         if((drop_timer - base_timer) > DROP_INTERVAL) {
             if(pt->move(gb, TETRO_DOWN) == false) {
-                delete pt;
-                td.setXY(3, 1);
-                pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), td);
+                if(spawnNewTetromino(gb, &pt, 3, 1) == false) {
+                    gameover = true;
+                }
             }
             base_timer = drop_timer;
         }
-
-        //gb.checkLines();
 
         /* Draw stuff and present it to the screen */
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        pt->Draw(renderer, gb); //Draw the player controlled tetromino
+        //Draw the player controlled tetromino; if false, gameboard is full
+        pt->Draw(renderer, gb);
         gb.Draw(renderer);      //Draw the gameboard
+
+        fs_title.Draw(renderer);
 
         SDL_RenderPresent(renderer);
 
         SDL_Log("===================");
         SDL_Delay(10);
+
+        if(gameover == true) {
+            break;
+        }
     }
 
     SDL_Quit();
