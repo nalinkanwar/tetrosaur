@@ -1,7 +1,7 @@
 #include "rect.h"
 #include "SDL/SDL_ttf.h"
 
-extern TTF_Font* font;
+extern TTF_Font* GameText;
 
 Rect::Rect(): Drawable(), w(0), h(0) { }
 Rect::Rect(int tx, int ty, int tw, int th): w(tw),h(th), Drawable(tx,ty) { }

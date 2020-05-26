@@ -73,6 +73,10 @@ bool Tetromino::spawn(Gameboard &gb, twoD& td) {
 
     int i = 0;
 
+    if(this->t == TETROMINO_NONE || this->t == TETROMINO_MAX) {
+        return false;
+    }
+
     while(i != 4) {
         Rect r((td.X() + tetrominos[this->t][i][0]), (td.Y() + tetrominos[this->t][i][1]), SCALING_UNIT, SCALING_UNIT);
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "Spawn [%d]block x,y = %d, %d\n", i, r.X(), r.Y());

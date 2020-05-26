@@ -16,7 +16,7 @@ class NumberBag
         NumberBag(int lo, int hi);
 
         void generateBag(int lo, int hi);
-
+        void printBag();
         int getNumber();
         bool isEmpty();
 };

@@ -4,7 +4,7 @@
 #include "SDL/SDL_ttf.h"
 #include "gameboard.h"
 #include "tetromino.h"
-#include "font.h"
+#include "gametext.h"
 #include "numberbag.h"
 
 #define MAX_X ((SCALING_UNIT * 10) + (SCALING_UNIT * 5))
@@ -18,7 +18,7 @@ uint8_t tetrominos[TETROMINO_MAX][4][2] = {
     {{0,0},{1,0},{2,0},{1,1}}, //T
     {{0,1},{1,1},{1,0},{2,0}}, //S
     {{0,0},{1,0},{1,1},{2,1}}, //Z
-    {{0,0},{1,0},{1,1},{2,1}}, //J
+    {{0,0},{1,0},{2,0},{2,1}}, //J
     {{0,0},{1,0},{0,1},{2,0}}, //L
 };
 
@@ -29,7 +29,7 @@ uint8_t tpivotdata[TETROMINO_MAX] = {
     1,     // T
     1,     // S
     2,     // Z
-    2,     // J
+    1,     // J
     1,     // L
 };
 
@@ -85,17 +85,6 @@ bool spawnNewTetromino(Gameboard &gb, Tetromino **pt, int type, int x, int y) {
     return((*pt)->spawn(gb, td));
 }
 
-enum control_types {
-    GAMEKEY_UP,
-    GAMEKEY_DOWN,
-    GAMEKEY_LEFT,
-    GAMEKEY_RIGHT,
-    GAMEKEY_LSHIFT,
-    GAMEKEY_RSHIFT,
-    GAMEKEY_SPACE,
-    GAMEKEY_MAX
-};
-
 int main(int argc, char *argv[])
 {
     bool quit = false, gameover = false;
@@ -103,22 +92,28 @@ int main(int argc, char *argv[])
     SDL_Window *window = nullptr;
     SDL_Renderer *renderer = nullptr;
     SDL_Surface *surface = nullptr;
-    Tetromino *pt = nullptr, *gt = nullptr;
-    color c(255,255,255,255);
-    Gameboard gb;
-    font fs_title;
-    NumberBag tetrobag(TETROMINO_NONE + 1, TETROMINO_MAX - 1);
     long base_timer, drop_timer, framerate;
 
     if((retval = initSystems(&window, &renderer)) != 0) {
         return retval;
     }
 
+    Font fs("FreeSans.ttf", 42);
+    Font fs_small("FreeSans.ttf", 24);
+    color c(255,255,255,255);
+    NumberBag tetrobag(TETROMINO_NONE + 1, TETROMINO_MAX - 1);
+
+    Tetromino *pt = nullptr, *gt = nullptr;
+    Gameboard gb(&fs_small);
+
     srand (time(NULL));
 
-    if((fs_title.load("FreeSans.ttf", 42)) == false) {
+    if(fs.isLoaded() == false) {
         return 5;
     }
+
+    GameText fs_title(&fs);
+
     fs_title.setText("Tetrosaur");
     fs_title.setColor(0,150,0, 255);
     fs_title.setXY(GB_MAX_X * SCALING_UNIT + 10,10);

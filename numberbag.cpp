@@ -1,6 +1,11 @@
 #include "numberbag.h"
 #include <iostream>
 #include <random>
+#include <string>
+
+/* project-specific vars */
+#include "tetromino.h"
+std::string ttstr[TETROMINO_MAX] = { "()", "I", "O", "T", "S", "Z", "J", "L" };
 
 NumberBag::NumberBag(int n) {
     this->lo = 0;
@@ -29,13 +34,21 @@ void NumberBag::generateBag(int lo, int hi)
         space.erase(space.begin() + i);
     }
 
-//    std::cout<<"Generated Bag : ";
-//    auto bit = this->bag.begin();
-//    while(bit != this->bag.end()) {
-//        std::cout<<*bit<<" ";
-//        bit++;
-//    }
-//    std::cout<<std::endl;
+    //this->printBag();
+}
+
+
+void NumberBag::printBag() {
+
+    std::cout<<"Generated Bag : ";
+    auto bit = this->bag.end();
+
+    do {
+        bit--;
+        std::cout<<ttstr[*bit]<<" ";
+    } while(bit != this->bag.begin());
+
+    std::cout<<std::endl;
 }
 
 int NumberBag::getNumber() {

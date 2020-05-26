@@ -1,16 +1,50 @@
+#include <iostream>
 #include <vector>
+#include <math.h>
+#include <algorithm>
+#include <string>
 #include "gameboard.h"
 
-Gameboard::Gameboard()
-{    
+Gameboard::Gameboard(Font *f)
+{
     this->Reset();
+
+    this->initText(f);
 }
 
-Gameboard::Gameboard(twoD &toff)
-{
+Gameboard::Gameboard(Font *f, twoD &toff)
+{    
     this->offset = toff;
     SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "setting offset %d,%d\n", toff.X(), toff.Y());
     this->Reset();
+
+    this->initText(f);
+}
+
+void Gameboard::initText(Font *f)
+{
+    GameText g(f);
+    int yoff = 50, fh;
+    std::string s = ("Score :" + std::to_string(this->score));
+
+    g.setColor(100,100,0,255);
+    g.setXY((GB_MAX_X * SCALING_UNIT) + this->offset.X() + 10, yoff);
+    g.setText(s);
+    this->texts.push_back(g);
+
+    TTF_SizeText(f->getFont(), s.c_str(), NULL, &fh);
+
+    yoff += (fh + 4);
+
+    g.setXY((GB_MAX_X * SCALING_UNIT) + this->offset.X() + 10, yoff);
+    g.setText("Lines :" + std::to_string(this->lines_cleared));
+    this->texts.push_back(g);
+
+    yoff += (fh + 4);
+
+    g.setXY((GB_MAX_X * SCALING_UNIT) + this->offset.X() + 10, yoff);
+    g.setText("Level :" + std::to_string(this->level));
+    this->texts.push_back(g);
 }
 
 void Gameboard::setOffset(twoD &toff)
@@ -33,6 +67,7 @@ void Gameboard::Reset()
             (*xit).setColor(255,255,255,255);
         }
     }
+    this->score = 0;
     SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`Done Resetting~~~~~~~~~~~~~~~~~~~~~~~~~~~``\n");
 }
 
@@ -48,7 +83,6 @@ bool Gameboard::checkRect(int gb_x, int gb_y)
     }
     Rect &tr = this->gb[gb_y][gb_x];
 
-//    if(tr.isFilled() == true && tr.isMovable() == false) {
     if(tr.getType() == RECT_FILLED && tr.isMovable() == false) {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "FILLED\n");
         return false;
@@ -153,6 +187,17 @@ bool Gameboard::Draw(SDL_Renderer *srend)
     SDL_SetRenderDrawColor(srend, 255,255,255,255);
     SDL_RenderDrawRect(srend, &gb_r);
 
+    auto titer = this->texts.begin();
+    while(titer != this->texts.end()) {
+        titer->Draw(srend);
+        titer++;
+    }
+
+    /*
+    this->tscore.Draw(srend);
+    this->tlevel.Draw(srend);
+    this->tlines.Draw(srend);
+    */
     return true;
 }
 
@@ -175,7 +220,7 @@ void Gameboard::applyGravity(int line)
 
 bool Gameboard::checkLines()
 {
-    int x,y, check;
+    int x,y, check, nlines = 0;
     bool flag = false;
 
     for(y = 0; y < GB_MAX_Y; y++) {
@@ -187,6 +232,7 @@ bool Gameboard::checkLines()
             }
         }
         if(check == GB_MAX_X) {
+            nlines++;
             flag = true;
             //blast this line;
             SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "BLAST check %d != %d", check, GB_MAX_X);
@@ -196,6 +242,18 @@ bool Gameboard::checkLines()
             this->applyGravity(y);
         }
     }
+
+    /* log() more lines you score, more points you get */
+    this->lines_cleared += nlines;
+    this->score += (nlines * 10);
+
+    if(this->lines_cleared == ((this->level + 1) * 10)) {
+        this->level++;
+    }
+
+    this->texts[GBT_SCORE].setText("Score :" + std::to_string(this->score));
+    this->texts[GBT_LINES].setText("Lines :" + std::to_string(this->lines_cleared));
+    this->texts[GBT_LEVEL].setText("Level :" + std::to_string(this->level));
 
     return flag;
 }

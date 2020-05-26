@@ -4,26 +4,19 @@
 #include "SDL.h"
 #include "SDL/SDL_ttf.h"
 #include "drawable.h"
+#include <string>
 
-class font: public Drawable
+
+class Font
 {
     private:
         TTF_Font *f=NULL;
-        SDL_Rect frect;
-        SDL_Surface *fsurf=nullptr;
-        SDL_Texture *ftext=nullptr;
-        char *cstr=NULL;
-        int fsize;
+        size_t fsize;
     public:
-        font();
-        font(const char* path, int size);
-        ~font();
-
+        Font(const char* path, int size);
         bool load(const char* path, int size);
-        bool prepare(SDL_Renderer *srend);
-        bool setText(const char* tcstr);
-        bool setSize(int n);
-        bool Draw(SDL_Renderer *srend);
+        bool isLoaded();
+        TTF_Font* getFont();
 };
 
 #endif // FONT_H
