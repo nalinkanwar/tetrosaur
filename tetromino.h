@@ -36,6 +36,7 @@ class Tetromino
         color c;
         tetro_types t;
         Rect ghost;
+        bool hasGhost = false;
     public:
         Tetromino();
         ~Tetromino();

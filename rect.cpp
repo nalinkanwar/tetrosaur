@@ -22,6 +22,14 @@ Rect& Rect::operator=(const Rect& tr)
     return (*this);
 }
 
+void Rect::setType(rect_types rt) {
+    this->type = rt;
+}
+
+rect_types Rect::getType() const {
+    return this->type;
+}
+
 void Rect::move(int tx, int ty)
 {
     if(this->isMovable() == true) {
@@ -92,61 +100,62 @@ bool Rect::Draw(SDL_Renderer *rend)
 
     //SDL_Log("Drawing at %d,%d\n", this->X(), this->Y());
     /* draw board boxes */
-//    srect = rect;
-//    srect.x = this->X() + (SCALING_UNIT/10);
-//    srect.y = this->Y() + (SCALING_UNIT/10);
-//    srect.w = SCALING_UNIT - (SCALING_UNIT/10);
-//    srect.h = SCALING_UNIT - (SCALING_UNIT/10);
-//    SDL_SetRenderDrawColor(rend, 55,55,55,255);
-//    SDL_RenderFillRect(rend, &srect);
 
+    switch(this->type) {
+        case RECT_NORMAL:
+            srect.x = this->X() + SCALING_UNIT;
+            srect.y = this->Y() + SCALING_UNIT;
+            srect.w = (SCALING_UNIT/10);
+            srect.h = (SCALING_UNIT/10);
+            SDL_SetRenderDrawColor(rend, 55,55,55,255);
+            SDL_RenderFillRect(rend, &srect);
+            break;
+        case RECT_FILLED:
+            /* now draw the actual rects */
+            rect.x = this->X() + (SCALING_UNIT/10);
+            rect.y = this->Y() + (SCALING_UNIT/10);
+            if(this->w == 0 && this->h == 0) {
+                return false;
+            }
+            rect.w = this->w - (SCALING_UNIT/10);
+            rect.h = this->h - (SCALING_UNIT/10);
 
-
-
-    srect.x = this->X() + SCALING_UNIT;
-    srect.y = this->Y() + SCALING_UNIT;
-    srect.w = (SCALING_UNIT/10);
-    srect.h = (SCALING_UNIT/10);
-    SDL_SetRenderDrawColor(rend, 55,55,55,255);
-    SDL_RenderFillRect(rend, &srect);
-
-
-    /* now draw the actual rects */
-    rect.x = this->X() + (SCALING_UNIT/10);
-    rect.y = this->Y() + (SCALING_UNIT/10);
-    if(this->w == 0 && this->h == 0) {
-        return false;
+            SDL_SetRenderDrawColor(rend, this->R(), this->G(), this->B(), this->A());
+            SDL_RenderFillRect(rend, &rect);
+            break;
+        case RECT_GHOST:
+            srect = rect;
+            srect.x = this->X() + (SCALING_UNIT/10);
+            srect.y = this->Y() + (SCALING_UNIT/10);
+            srect.w = SCALING_UNIT - (SCALING_UNIT/10);
+            srect.h = SCALING_UNIT - (SCALING_UNIT/10);
+            SDL_SetRenderDrawColor(rend, 55,55,55,55);
+            SDL_RenderFillRect(rend, &srect);
+            break;
+        default:
+            break;
     }
-    rect.w = this->w - (SCALING_UNIT/10);
-    rect.h = this->h - (SCALING_UNIT/10);
+//    /**/
+//    SDL_Color c;
+//    SDL_Rect trect;
+//    const char *cstr;
 
+//    trect.x = this->X() + 2; trect.y = this->Y() + 2;
+//    trect.w = SCALING_UNIT - 4; trect.h = SCALING_UNIT - 4;
+//    c.r = 255; c.g = 255; c.b = 255; c.a = 255;
+//    if(this->isMovable())
+//        cstr = "1";
+//    else
+//        cstr = "0";
 
+//    text_surface = TTF_RenderText_Solid(font, cstr, c);
+//    stexture = SDL_CreateTextureFromSurface(rend, text_surface);
 
-    SDL_SetRenderDrawColor(rend, this->R(), this->G(), this->B(), this->A());
-    SDL_RenderFillRect(rend, &rect);
-
-
-    /**/
-    SDL_Color c;
-    SDL_Rect trect;
-    const char *cstr;
-
-    trect.x = this->X() + 2; trect.y = this->Y() + 2;
-    trect.w = SCALING_UNIT - 4; trect.h = SCALING_UNIT - 4;
-    c.r = 255; c.g = 255; c.b = 255; c.a = 255;
-    if(this->isMovable())
-        cstr = "1";
-    else
-        cstr = "0";
-
-    text_surface = TTF_RenderText_Solid(font, cstr, c);
-    stexture = SDL_CreateTextureFromSurface(rend, text_surface);
-
-    if(text_surface == nullptr || stexture == nullptr) {
-        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Error in text");
-    }
-    SDL_RenderCopy(rend, stexture, NULL, &trect);
-    /**/
+//    if(text_surface == nullptr || stexture == nullptr) {
+//        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Error in text");
+//    }
+//    SDL_RenderCopy(rend, stexture, NULL, &trect);
+//    /**/
 
 
     return true;    

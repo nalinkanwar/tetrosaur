@@ -87,7 +87,7 @@ void Tetromino::spawn(twoD& td) {
 void Tetromino::Draw(SDL_Renderer *rend, Gameboard &gb)
 {
     auto rit = this->rlist.begin();
-    int y = 0;
+    int y = 1;
 
     /* here X,Y points to gameboard x,y values */
     while(rit != this->rlist.end()) {
@@ -99,19 +99,24 @@ void Tetromino::Draw(SDL_Renderer *rend, Gameboard &gb)
     }
 
     /* Draw ghost tetromino on gameboard */
-//    while(this->checkPos(gb, 0, y) != false) y++;
-//    SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Calculated %d\n", y);
 
-//    if(y != GB_MAX_Y) {
-//        twoD ttd(0, y-1);
-//        this->ghost.setPos(ttd);
+    if(this->hasGhost == false) {
+        while(this->checkPos(gb, 0, y) != false) y++;
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Calculated %d\n", y);
 
-//        rit = this->rlist.begin();
-//        while(rit != this->rlist.end()) {
-//            gb.setGhostRect((*rit).X(), (*rit).Y() + y - 1);
-//            rit++;
-//        }
-//    }
+        if(y > 2 && y < GB_MAX_Y) {
+            twoD ttd(0, y-1);
+            this->ghost.setPos(ttd);
+
+            rit = this->rlist.begin();
+            while(rit != this->rlist.end()) {
+                gb.setGhostRect((*rit).X(), (*rit).Y() + y - 1);
+                rit++;
+            }
+            this->hasGhost = true;
+        }
+
+    }
 }
 
 
@@ -275,7 +280,9 @@ void Tetromino::clearPos(Gameboard &gb)
         gb.resetRect((*rit).X(), (*rit).Y());
 
         /* clean ghost piece */
-        gb.resetRect((*rit).X() + this->ghost.X(), (*rit).Y() + this->ghost.Y());
+        if(this->hasGhost == true)
+            gb.resetRect((*rit).X() + this->ghost.X(), (*rit).Y() + this->ghost.Y());
         rit++;
     }
+    this->hasGhost = false;
 }

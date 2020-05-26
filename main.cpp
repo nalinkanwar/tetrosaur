@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
     Gameboard gb(td);
     long base_timer, drop_timer, framerate;
 
-
     if((retval = initSDL(&window, &renderer)) != 0) {
         return retval;
     }

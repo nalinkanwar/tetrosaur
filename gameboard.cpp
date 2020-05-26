@@ -48,7 +48,8 @@ bool Gameboard::checkRect(int gb_x, int gb_y)
     }
     Rect &tr = this->gb[gb_y][gb_x];
 
-    if(tr.isFilled() == true && tr.isMovable() == false) {
+//    if(tr.isFilled() == true && tr.isMovable() == false) {
+    if(tr.getType() == RECT_FILLED && tr.isMovable() == false) {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "FILLED\n");
         return false;
     }
@@ -74,18 +75,29 @@ bool Gameboard::resetRect(int gb_x, int gb_y)
     tr.color::setColor(255,255,255,255);
     tr.setSize(0,0);
     tr.resetMovable();
+    tr.setType(RECT_NORMAL);
 
     return true;
 }
 
 bool Gameboard::setGhostRect(int gb_x, int gb_y)
 {
+    if(gb_x < 0 || gb_x >= GB_MAX_X) {
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "overshooting X %d >= %d\n", gb_x, GB_MAX_X);
+        return false;
+    }
+    if(gb_y < 0 || gb_y >= GB_MAX_Y) {
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "overshooting Y %d >= %d\n", gb_y, GB_MAX_Y);
+        return false;
+    }
+
     Rect &tr = this->gb[gb_y][gb_x];
     color col(100,100,100,255);
 
     tr.setColor(col);
     tr.setSize(SCALING_UNIT/2, SCALING_UNIT/2);
-    tr.setMovable();
+    tr.setType(RECT_GHOST);
+    tr.resetMovable();
 }
 
 bool Gameboard::setRect(int gb_x, int gb_y, color & tc, bool movable)
@@ -105,6 +117,7 @@ bool Gameboard::setRect(int gb_x, int gb_y, color & tc, bool movable)
 
     tr.color::setColor(tc);
     tr.setSize(SCALING_UNIT, SCALING_UNIT);
+    tr.setType(RECT_FILLED);
     if(movable == true)
         tr.setMovable();
     else
