@@ -84,13 +84,13 @@ bool Rect::Draw(SDL_Renderer *rend)
 
     //SDL_Log("Drawing at %d,%d\n", this->X(), this->Y());
     /* draw board boxes */
-    srect = rect;
-    srect.x = this->X() + (SCALING_UNIT/10);
-    srect.y = this->Y() + (SCALING_UNIT/10);
-    srect.w = SCALING_UNIT - (SCALING_UNIT/10);
-    srect.h = SCALING_UNIT - (SCALING_UNIT/10);
-    SDL_SetRenderDrawColor(rend, 55,55,55,255);
-    SDL_RenderFillRect(rend, &srect);
+//    srect = rect;
+//    srect.x = this->X() + (SCALING_UNIT/10);
+//    srect.y = this->Y() + (SCALING_UNIT/10);
+//    srect.w = SCALING_UNIT - (SCALING_UNIT/10);
+//    srect.h = SCALING_UNIT - (SCALING_UNIT/10);
+//    SDL_SetRenderDrawColor(rend, 55,55,55,255);
+//    SDL_RenderFillRect(rend, &srect);
 
     srect.x = this->X() + SCALING_UNIT;
     srect.y = this->Y() + SCALING_UNIT;
@@ -107,5 +107,9 @@ bool Rect::Draw(SDL_Renderer *rend)
     }
     rect.w = this->w - (SCALING_UNIT/10);
     rect.h = this->h - (SCALING_UNIT/10);
-    return true;
+
+    SDL_SetRenderDrawColor(rend, this->R(), this->G(), this->B(), this->A());
+    SDL_RenderFillRect(rend, &rect);
+
+    return true;    
 }

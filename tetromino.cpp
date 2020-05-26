@@ -60,7 +60,11 @@ void Tetromino::Draw(SDL_Renderer *rend, Gameboard &gb)
 {
     auto rit = this->rlist.begin();
 
+    /* here X,Y points to gameboard x,y values */
     while(rit != this->rlist.end()) {
+
+        //SDL_Log("Spawn x,y = %d, %d\n", (*rit).X(), (*rit).Y());
+
         gb.setRect((*rit).X(), (*rit).Y(),this->c, true);
         rit++;
     }

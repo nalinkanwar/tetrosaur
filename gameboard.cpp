@@ -100,11 +100,12 @@ bool Gameboard::Draw(SDL_Renderer *srend)
         return false;
     }
 
+    /* here X,Y points to pixel values */
     for(auto yit = this->gb.begin(); yit != this->gb.end(); yit++) {
         for(auto xit = yit->begin(); xit != yit->end(); xit++) {
             (*xit).Draw(srend);
             if((*xit).isMovable() == true) {
-                this->resetRect((*xit).X(), (*xit).Y());
+                SDL_Log("Drew %d,%d\n", (*xit).X(), (*xit).Y());
             }
         }
     }
