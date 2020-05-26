@@ -5,10 +5,11 @@
 #include "gameboard.h"
 #include "tetromino.h"
 #include "font.h"
+#include "numberbag.h"
 
 #define MAX_X ((SCALING_UNIT * 10) + (SCALING_UNIT * 5))
 #define MAX_Y ((SCALING_UNIT * 22) + (SCALING_UNIT))
-#define DROP_INTERVAL 500
+#define DROP_INTERVAL 1000
 
 uint8_t tetrominos[TETROMINO_MAX][4][2] = {
     {{0,0},{0,0},{0,0},{0,0}}, //NONE
@@ -17,8 +18,19 @@ uint8_t tetrominos[TETROMINO_MAX][4][2] = {
     {{0,0},{1,0},{2,0},{1,1}}, //T
     {{0,1},{1,1},{1,0},{2,0}}, //S
     {{0,0},{1,0},{1,1},{2,1}}, //Z
-    {{0,0},{1,0},{2,0},{2,1}}, //J
-    {{0,0},{0,1},{1,0},{2,0}}, //L
+    {{0,0},{1,0},{1,1},{2,1}}, //J
+    {{0,0},{1,0},{0,1},{2,0}}, //L
+};
+
+uint8_t tpivotdata[TETROMINO_MAX] = {
+    0,     //NONE
+    1,     // I
+    1,     // O
+    1,     // T
+    1,     // S
+    2,     // Z
+    2,     // J
+    1,     // L
 };
 
 uint8_t tcolordata[TETROMINO_MAX][4] = {
@@ -59,19 +71,30 @@ int initSystems(SDL_Window **window, SDL_Renderer **renderer)
     return 0;
 }
 
-bool spawnNewTetromino(Gameboard &gb, Tetromino **pt, int x, int y) {
+bool spawnNewTetromino(Gameboard &gb, Tetromino **pt, int type, int x, int y) {
     twoD td(x,y);
 
     if(*pt != nullptr) {
         delete *pt;
     }
     td.setXY(3, 1);
-    *pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1));
+    *pt = new Tetromino(static_cast<tetro_types>(type));
     if(*pt == nullptr)
         return false;
 
     return((*pt)->spawn(gb, td));
 }
+
+enum control_types {
+    GAMEKEY_UP,
+    GAMEKEY_DOWN,
+    GAMEKEY_LEFT,
+    GAMEKEY_RIGHT,
+    GAMEKEY_LSHIFT,
+    GAMEKEY_RSHIFT,
+    GAMEKEY_SPACE,
+    GAMEKEY_MAX
+};
 
 int main(int argc, char *argv[])
 {
@@ -84,7 +107,7 @@ int main(int argc, char *argv[])
     color c(255,255,255,255);
     Gameboard gb;
     font fs_title;
-
+    NumberBag tetrobag(TETROMINO_NONE + 1, TETROMINO_MAX - 1);
     long base_timer, drop_timer, framerate;
 
     if((retval = initSystems(&window, &renderer)) != 0) {
@@ -96,24 +119,22 @@ int main(int argc, char *argv[])
     if((fs_title.load("FreeSans.ttf", 42)) == false) {
         return 5;
     }
-
     fs_title.setText("Tetrosaur");
     fs_title.setColor(0,150,0, 255);
     fs_title.setXY(GB_MAX_X * SCALING_UNIT + 10,10);
     fs_title.prepare(renderer);
 
     /* spawn the first one */
-    spawnNewTetromino(gb, &pt, 3, 1);
-//    td.setXY(3, 1);
-//    pt = new Tetromino(static_cast<tetro_types>((rand() % (TETROMINO_MAX - 1)) + 1), gb, td);
-    //pt = new Tetromino(TETROMINO_T, td);
+    spawnNewTetromino(gb, &pt, tetrobag.getNumber(), 3, 1);
 
+    /* Timers */
     base_timer = drop_timer = SDL_GetTicks();
 
     /* Main game loop */
     while (!quit) {
 
         SDL_Event event;
+        memset(&event, 0, sizeof(SDL_Event));
         while (SDL_PollEvent(&event)) {
             switch(event.type) {                
                 case SDL_WINDOWEVENT:
@@ -124,6 +145,23 @@ int main(int argc, char *argv[])
                     }
                     break;
                 }
+                break;
+                case SDL_KEYUP: {
+                    switch(event.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            quit = true;
+                            break;
+                        case SDLK_LEFT:
+                        case SDLK_RIGHT:
+                        case SDLK_DOWN:
+                        case SDLK_SPACE:
+                        case SDLK_LSHIFT:
+                        case SDLK_UP:
+                        case SDLK_RSHIFT:
+                            break;
+                    }
+                }
+                break;
                 case SDL_KEYDOWN:
                 {
                     switch(event.key.keysym.sym) {
@@ -138,14 +176,14 @@ int main(int argc, char *argv[])
                             break;
                         case SDLK_DOWN:
                             if(pt->move(gb, TETRO_DOWN) == false) {
-                                if(spawnNewTetromino(gb, &pt, 3, 1) == false) {
+                                if(spawnNewTetromino(gb, &pt, tetrobag.getNumber(), 3, 1) == false) {
                                     gameover = true;
                                 }
                             }
                             break;
                         case SDLK_SPACE:
                             while(pt->move(gb, TETRO_DOWN) != false);
-                            if(spawnNewTetromino(gb, &pt, 3, 1) == false) {
+                            if(spawnNewTetromino(gb, &pt, tetrobag.getNumber(), 3, 1) == false) {
                                 gameover = true;
                             }
                             break;
@@ -166,7 +204,7 @@ int main(int argc, char *argv[])
         drop_timer = SDL_GetTicks();
         if((drop_timer - base_timer) > DROP_INTERVAL) {
             if(pt->move(gb, TETRO_DOWN) == false) {
-                if(spawnNewTetromino(gb, &pt, 3, 1) == false) {
+                if(spawnNewTetromino(gb, &pt, tetrobag.getNumber(), 3, 1) == false) {
                     gameover = true;
                 }
             }

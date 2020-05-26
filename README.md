@@ -7,3 +7,12 @@ This is a simple and functional tetris clone which tries to follow the original 
 This is mostly written as a learning project so expect some wtfs if you look into the code.
 
 TODO:
+
+- Pseudo randomizer for next tetromino selection
+
+- Wallkicks
+- Scoring
+- Level implementation
+- Menu
+- Save/Resume
+

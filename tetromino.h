@@ -26,6 +26,7 @@ enum tetro_direction {
 
 extern uint8_t tetrominos[TETROMINO_MAX][4][2];
 extern uint8_t tcolordata[TETROMINO_MAX][4];
+extern uint8_t tpivotdata[TETROMINO_MAX];
 
 class Gameboard;
 

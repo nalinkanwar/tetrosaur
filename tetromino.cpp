@@ -152,30 +152,26 @@ bool Tetromino::put(Gameboard &gb)
 bool Tetromino::rotate(Gameboard &gb, tetro_direction ttd)
 {
     auto rit = this->rlist.begin();
-    int x[4], y[4], ctr = 0;
-    float angle;
+    int x[4], y[4], ctr = 0, xoffset = 0;
     int pivotx = 0, pivoty = 0;
-    float dx = 1.0, dy = 1.0;;
-    float s, c;
-    int mat[4][4];
 
     if(this->rlist.empty()) {
         return false;
     }
 
-    pivotx = this->rlist[1].X();
-    pivoty = this->rlist[1].Y();
+    pivotx = this->rlist[tpivotdata[this->t]].X();
+    pivoty = this->rlist[tpivotdata[this->t]].Y();
 
     SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "Pivoting tetromino around %d,%d\n", pivotx, pivoty);
     while(rit != this->rlist.end())
     {
         switch(ttd) {
             case TETRO_ROL:
-                x[ctr] = pivotx + (pivoty - (*rit).Y());
+                x[ctr] = pivotx + (pivoty - (*rit).Y()) + xoffset;
                 y[ctr] = pivoty - (pivotx - (*rit).X());
             break;
             case TETRO_ROR:
-                x[ctr] = pivotx - (pivoty - (*rit).Y());
+                x[ctr] = pivotx - (pivoty - (*rit).Y()) + xoffset;
                 y[ctr] = pivoty + (pivotx - (*rit).X());
             break;
         }
@@ -185,11 +181,24 @@ bool Tetromino::rotate(Gameboard &gb, tetro_direction ttd)
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_DEBUG, "Rotating tetromino to [%d]%d,%d\n", ctr, x[ctr], y[ctr]);
 
         if(gb.checkRect(x[ctr], y[ctr]) == false) {
-            SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Rotating tetromino fail\n");
-            return false;
+            /* simple wallkick algo; try one space left & one space right if still fail, then actually fail */
+            if(xoffset == 0) {
+                xoffset = 1;
+            } else if (xoffset == 1) {
+                xoffset = -1;
+            } else {
+                SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Rotating tetromino fail\n");
+                return false;
+            }
+            ctr = 0;
+            rit = this->rlist.begin();
+
+            pivotx = this->rlist[tpivotdata[this->t]].X() + xoffset;
+            pivoty = this->rlist[tpivotdata[this->t]].Y();
+        } else {
+            ctr++;
+            rit++;
         }
-        ctr++;
-        rit++;
     }
 
     rit = this->rlist.begin();
@@ -232,7 +241,6 @@ bool Tetromino::move(Gameboard &gb, tetro_direction ttd)
         case TETRO_ROR:
             //TODO: maybe separate rotate() for these two ?
             break;
-            /* TODO wallkicks here? */
         default:
             break;
     }
