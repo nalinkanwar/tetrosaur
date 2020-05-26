@@ -31,4 +31,8 @@ endif()
 # files are only copied if a target depends on them
 add_custom_target(data-target ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/FreeSans.ttf")
 
+# Display font files in projects view
+FILE(GLOB_RECURSE FontFiles "*.ttf")
+add_custom_target(fonts SOURCES ${FontFiles})
+add_custom_target(LICENSE SOURCES LICENSE README.md)
 
